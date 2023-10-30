@@ -27,47 +27,32 @@ Repositorio para a atividade de Docker, do programa de bolsas da Compass UOL.
 ### Arquitetura básica da atividade
 
 <div style="text-align: center;">
-  <img src="/assets/01.jpg" width="700" alt="">
+  <img src="/assets/01-arquitetura.jpg" width="700" alt="arquitetura da atividade">
 </div>
 
 ## Instruções de Execução
 
 ### - Criação e configuração da VPC:
 
-- No serviço VPC no Console da AWS foi criada uma VPC.
+- No serviço VPC no Console da AWS foi criada uma VPC com nome `VPC-compasso-1`.
 - Nesta VPC, foram criadas duas subnets na zona da disponibilidade `us-east-1a`, uma pública e a outra privada.
 - Também foram foram criadas duas subnets na zona da disponibilidade `us-east-1b`, assim como anteriormente, uma pública e a outra privada.
-- Foram criadas duas tabelas de roteamento, as subnets públicas e outra para as subnets privadas.
+- Foram criadas duas tabelas de roteamento, uma para as subnets públicas e outra para as subnets privadas.
 - Para a tabela de roteamento com as subnets públicas, foi criado um gateway de internet, e então, foi adicionado uma rota para o Internet Gateway.
 - Já para a tabela de roteamento com as subnets privadas, foi criado um NAT gateway, e depois foi adicionado uma rota para o NAT Gateway.
 
 Pode-se conferir como ficou a VPC na imagem a seguir:
 
-// imagem
-
-### - Criação de um Bastion Host
-
-- Para acessar as instâncias que serão criadas para alocar os containeres com as aplicações, foi criado uma instância que serviu de Bastion Host.
-- Configurações da instância criada:
-  - Chave pública para poder acessar a instância
-  - Imagem: Amazon Linux 2
-  - Tipo: t3.micro
-  - Armazenamento: 8 GB SSD
-  - Elastic IP: 1 IP elástico é associado a instância
+<div style="text-align: center;">
+  <img src="/assets/02-mapa-de-recursos.png" width="700" alt="mapa de recursos da VPC">
+</div>
 
 ### - Grupos de segurança
 
-- Grupo de segurança do Bastion Host:
-
-  | Tipo | Protocolo | Porta | Origem    |
-  | ---- | --------- | ----- | --------- |
-  | SSH  | TCP       | 22    | 0.0.0.0/0 |
-
-- Grupo de segurança das instâncias referentes às aplicações:
+- Na seção do EC2, nos grupos de segurança, foram configurados os seguintes grupos:
 
   | Tipo         | Protocolo | Porta | Origem           |
   | ------------ | --------- | ----- | ---------------- |
-  | SSH          | TCP       | 22    | SG-Bastion-Host  |
   | HTTP         | TCP       | 80    | SG-Load Balancer |
   | NFS          | TCP       | 2049  | SG-EFS           |
   | MYSQL/Aurora | TCP       | 3306  | SG-RDS           |
@@ -95,6 +80,7 @@ Pode-se conferir como ficou a VPC na imagem a seguir:
 
 Para a realização dessa atividade, foi escolhido o Applcation Load Balancer, para poder utilizar a mecânica dos grupos de destino, que não tem no Classic Load Balancer. Então, as configurações do Load Balancer ficaram assim:
 
+- Na seção do EC2, na opção do Load Balancer, clicar em "criar Load Balancer".
 - Tipo: Application Load Balancer.
 - Esquema: Voltado para a internet.
 - Tipo de endereço IP: "IPv4".
@@ -110,31 +96,33 @@ Para a realização dessa atividade, foi escolhido o Applcation Load Balancer, p
 
 ### - Configuração do EFS
 
+- Na seção do EFS, foi clicado em "criar sistemas de arquivos".
 - Nome: EFS-compasso.
 - VPC: VPC criada anteriormente.
 - Grupo de segurança: SG-EFS.
 
 ### - Configuração do RDS
 
-- Banco de Dados: MYSQL
-- Versão: 8.0.33
-- Modelo: nível gratuito
-- Identificação: db-ufc
-- Nome de usuário: admin
-- Instância: t3.micro
-- Armazenamento: GP3
-- Conectividade: não se conectar a um recurso de computação do EC2
-- Tipo de rede: IPV4
-- VPC: VPC criada anteriormente
-- Subredes: sub-redes privadas das zonas de disponibilidade `us-east-1a` e `us-east-1b`
-- Grupo de Segurança: SG-RDS
-- Zona de disponibilidade: "sem preferência"
-- Autoridade de certificação: padrão
-- Autenticação: com senha
-- Senha: admin123
-- Nome do banco de dados: dbwordpress
+- Na seção do RDS, no painel das instâncias, foi clicado em "criar banco de dados".
+- Banco de Dados: MYSQL.
+- Versão: 8.0.33.
+- Modelo: nível gratuito.
+- Identificação: db-ufc.
+- Nome de usuário: admin.
+- Instância: t3.micro.
+- Armazenamento: GP3.
+- Conectividade: não se conectar a um recurso de computação do EC2.
+- Tipo de rede: IPV4.
+- VPC: VPC criada anteriormente.
+- Subredes: sub-redes privadas das zonas de disponibilidade `us-east-1a` e `us-east-1b`.
+- Grupo de Segurança: SG-RDS.
+- Zona de disponibilidade: "sem preferência".
+- Autoridade de certificação: padrão.
+- Autenticação: com senha.
+- Senha: admin123.
+- Nome do banco de dados: dbwordpress.
 
-### - Configuração do Script user_data
+### - Configuração do Script 'user_data'
 
 Para subir os contêineres responsáveis pela configuração do WordPress, foi criado um arquivo `docker-compose.yml` que foi adicionado no meu github para posteriormente acessa-lo nas instâncias privadas através do script `user_data.sh`.
 
@@ -196,22 +184,22 @@ docker-compose -f /home/ec2-user/docker-compose.yml up -d
 
 Para configurarmos o Auto Scaling, primeiro, precisamos configurar corretametne o Modelo de Execução das máquinas EC2, que irão utilizar o script `user_data.sh`.
 
-- Configurações da instância criada:
-  - Nome: EC2-modelo
-  - Imagem: Amazon Linux 2
-  - Tipo: t3.micro
-  - Armazenamento: 8 GB SSD
-  - Chave pública para acesso ao ambiente
-  - Grupo de Segurança: SG-Instancias (configurado anteriormente)
-  - Utiliza o script `user_data.sh`.
+- Na seção do EC2, no painel de "Instâncias" em "Modelos de execução" foi clicado na opção de "criar modelo de execução".
+- Nome: EC2-Compasso.
+- Imagem: Amazon Linux 2.
+- Tipo: t2.micro.
+- Armazenamento: 8 GB SSD.
+- Chave pública para acesso ao ambiente.
+- Grupo de Segurança: SG-Instancias (configurado anteriormente).
+- Utiliza o script `user_data.sh`.
 
 ### - Configuração do Auto Scaling
 
-- Modelo de execução: EC2-modelo.
+- Na seção do EC2, no painel de "Grupos de Auto Scaling", foi clicado em "Criar grupo do Auto Scaling".
+- Modelo de execução selecionado: EC2-Compasso.
 - Associação com a VPC criada anteriormente.
 - Associação com as sub-redes privadas das zonas de disponibilidade `us-east-1a` e `us-east-1b`.
 - Associação com o Applcation Load Balancer criado anteriormente.
 - Capacidade desejada = 2, capacidade mínima = 2 e capacidade máxima = 2.
-- Habilitado coleta de dados no CloudWatch (configuração opcional).
 
 Com essa configuração, todos os requisitos da atividade são cumpridos.
