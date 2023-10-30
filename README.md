@@ -1,21 +1,15 @@
 # Atividade Docker
 
-Repositorio para a atividade de Docker, do programa de bolsas da Compass UOL.
-
-**Objetivo**: Criar um ambiente AWS com uma instância EC2 e configurar o NFS para armazenar dados.
-
-**Escopo**: A atividade incluirá a geração de uma chave pública de acesso, criação de uma instância EC2 com o sistema operacional Amazon Linux 2, geração de um endereço IP elástico e anexá-lo à instância EC2, liberação de portas de comunicação para acesso público, configuração do NFS, criação de um diretório com o nome do usuário no filesystem do NFS, instalação e configuração do Apache, criação de um script para validar se o serviço está online e enviar o resultado para o diretório NFS, e configuração da execução automatizada do script a cada 5 minutos.
+Repositorio para documentar a atividade de Docker, do programa de bolsas da Compass UOL.
 
 ## Requisitos
-
-### Descrição
 
 - Instalação e configuração do DOCKER ou CONTAINERD no host EC2: ponto adicional para instalação via script de Start Instance (user_data.sh);
 - Deploy de uma aplicação Wordpress com: container de aplicação RDS database MySQL;
 - Configuração da utilização do serviço EFS AWS para estáticos do container da aplicação Wordpress;
 - Configuração do serviço de Load Balancer AWS para a aplicação Wordpress.
 
-### Pontos importantes:
+### Pontos de Atenção:
 
 - Não utilizar IP público para saída do serviço WP (Evitar publicar o serviço WP via IP Público);
 - Sugestão para o tráfego de internet: sair pelo LB (Load Balancer Classic);
@@ -24,10 +18,10 @@ Repositorio para a atividade de Docker, do programa de bolsas da Compass UOL.
 - Necessário demonstrar a aplicação Wordpress funcionando (tela de login);
 - A aplicação Wordpress precisa estar rodando na porta 80 ou 8080.
 
-### Arquitetura básica da atividade
+### Topologia proposta para a atividade
 
 <div style="text-align: center;">
-  <img src="/assets/01-arquitetura.jpg" width="700" alt="arquitetura da atividade">
+  <img src="/assets/01-arquitetura.jpg" width="700" alt="Topologia proposta para a atividade">
 </div>
 
 ## Instruções de Execução
@@ -54,7 +48,7 @@ Pode-se conferir como ficou a VPC na imagem a seguir:
   | Tipo         | Protocolo | Porta | Origem           |
   | ------------ | --------- | ----- | ---------------- |
   | HTTP         | TCP       | 80    | SG-Load Balancer |
-  | NFS          | TCP       | 2049  | SG-EFS           |
+  | NFS          | NFS       | 2049  | SG-EFS           |
   | MYSQL/Aurora | TCP       | 3306  | SG-RDS           |
 
 - Grupo de segurança do Load Balancer:
@@ -78,49 +72,55 @@ Pode-se conferir como ficou a VPC na imagem a seguir:
 
 ### - Configuração do Load Balancer
 
-Para a realização dessa atividade, foi escolhido o Applcation Load Balancer, para poder utilizar a mecânica dos grupos de destino, que não tem no Classic Load Balancer. Então, as configurações do Load Balancer ficaram assim:
+Para a realização dessa atividade, foi escolhido o Applcation Load Balancer, para poder utilizar a mecânica dos grupos de destino. Então, as configurações do Load Balancer ficaram assim:
 
 - Na seção do EC2, na opção do Load Balancer, clicar em "criar Load Balancer".
-- Tipo: Application Load Balancer.
-- Esquema: Voltado para a internet.
-- Tipo de endereço IP: "IPv4".
-- Grupo de segurança: SG-Load-Balancer.
-- Listener: grupo de destino criado.
+- Foram selecionadas as seguintes configurações:
+  - Tipo: Application Load Balancer.
+  - Esquema: Voltado para a internet.
+  - Tipo de endereço IP: "IPv4".
+  - Grupo de segurança: SG-Load-Balancer.
+  - Listener: grupo de destino criado.
 
 ### - Configuração do Grupo de Destino (Target Groupy)
 
-- Associação com a VPC: VPC criada para a atividade.
-- Associação com as sub-redes públicas das duas zonas de disponibilidade disponíveis.
-- Protocolo "HTTP" e porta "80" para o listener.
-- O grupo de destino (Target Group) irá incluir as instâncias privadas criadas anteriormente.
+- Foram selecionadas as seguintes configurações:
+  - VPC: VPC criada para a atividade.
+  - Sub-redes: Sub-redes públicas das duas zonas de disponibilidade disponíveis.
+  - Protocolo: "HTTP"
+  - Porta: "80" para o listener.
+  - Grupo de destino (Target Group): instâncias privadas criadas anteriormente.
 
 ### - Configuração do EFS
 
 - Na seção do EFS, foi clicado em "criar sistemas de arquivos".
-- Nome: EFS-compasso.
-- VPC: VPC criada anteriormente.
-- Grupo de segurança: SG-EFS.
+- Foram selecionadas as seguintes configurações:
+  - Nome: EFS-compasso.
+  - VPC: VPC criada anteriormente.
+  - Grupo de segurança: SG-EFS.
 
 ### - Configuração do RDS
 
 - Na seção do RDS, no painel das instâncias, foi clicado em "criar banco de dados".
-- Banco de Dados: MYSQL.
-- Versão: 8.0.33.
-- Modelo: nível gratuito.
-- Identificação: db-ufc.
-- Nome de usuário: admin.
-- Instância: t3.micro.
-- Armazenamento: GP3.
-- Conectividade: não se conectar a um recurso de computação do EC2.
-- Tipo de rede: IPV4.
-- VPC: VPC criada anteriormente.
-- Subredes: sub-redes privadas das zonas de disponibilidade `us-east-1a` e `us-east-1b`.
-- Grupo de Segurança: SG-RDS.
-- Zona de disponibilidade: "sem preferência".
-- Autoridade de certificação: padrão.
-- Autenticação: com senha.
-- Senha: admin123.
-- Nome do banco de dados: dbwordpress.
+- Foram selecionadas as seguintes configurações:
+  - Metodo de criação: Padrão.
+  - Banco de Dados: MYSQL.
+  - Versão: 8.0.33.
+  - Modelo: nível gratuito.
+  - Identificação: db-ufc.
+  - Nome de usuário: admin.
+  - Instância: t3.micro.
+  - Armazenamento: GP3.
+  - Conectividade: não se conectar a um recurso de computação do EC2.
+  - Tipo de rede: IPV4.
+  - VPC: VPC criada anteriormente.
+  - Subredes: sub-redes privadas das zonas de disponibilidade `us-east-1a` e `us-east-1b`.
+  - Grupo de Segurança: SG-RDS.
+  - Zona de disponibilidade: "sem preferência".
+  - Autoridade de certificação: padrão.
+  - Autenticação: com senha.
+  - Senha: admin123.
+  - Em configurações adicionais, em nome do banco de dados: dbwordpress.
 
 ### - Configuração do Script 'user_data'
 
@@ -185,21 +185,23 @@ docker-compose -f /home/ec2-user/docker-compose.yml up -d
 Para configurarmos o Auto Scaling, primeiro, precisamos configurar corretametne o Modelo de Execução das máquinas EC2, que irão utilizar o script `user_data.sh`.
 
 - Na seção do EC2, no painel de "Instâncias" em "Modelos de execução" foi clicado na opção de "criar modelo de execução".
-- Nome: EC2-Compasso.
-- Imagem: Amazon Linux 2.
-- Tipo: t2.micro.
-- Armazenamento: 8 GB SSD.
-- Chave pública para acesso ao ambiente.
-- Grupo de Segurança: SG-Instancias (configurado anteriormente).
-- Utiliza o script `user_data.sh`.
+- Foram selecionadas as seguintes configurações:
+  - Nome: EC2-Compasso.
+  - Imagem: Amazon Linux 2.
+  - Tipo: t2.micro.
+  - Armazenamento: 8 GB SSD.
+  - Chave pública para acesso ao ambiente.
+  - Grupo de Segurança: SG-Instancias (configurado anteriormente).
+  - Utiliza o script `user_data.sh`.
 
 ### - Configuração do Auto Scaling
 
 - Na seção do EC2, no painel de "Grupos de Auto Scaling", foi clicado em "Criar grupo do Auto Scaling".
-- Modelo de execução selecionado: EC2-Compasso.
-- Associação com a VPC criada anteriormente.
-- Associação com as sub-redes privadas das zonas de disponibilidade `us-east-1a` e `us-east-1b`.
-- Associação com o Applcation Load Balancer criado anteriormente.
-- Capacidade desejada = 2, capacidade mínima = 2 e capacidade máxima = 2.
+- Foram selecionadas as seguintes configurações:
+  - Modelo de execução selecionado: EC2-Compasso.
+  - Associação com a VPC criada anteriormente.
+  - Associação com as sub-redes privadas das zonas de disponibilidade `us-east-1a` e `us-east-1b`.
+  - Associação com o Applcation Load Balancer criado anteriormente.
+  - Capacidade desejada = 2, capacidade mínima = 2 e capacidade máxima = 2.
 
-Com essa configuração, todos os requisitos da atividade são cumpridos.
+Com essa configuração, todos os requisitos da atividade foram cumpridos.
